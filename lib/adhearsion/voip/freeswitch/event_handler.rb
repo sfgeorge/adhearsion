@@ -1,3 +1,5 @@
+# THIS IS PROBABLY DEAD CODE
+
 module Adhearsion
   module VoIP
     module FreeSwitch
