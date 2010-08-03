@@ -29,7 +29,7 @@ module Adhearsion
 
     class FreeSWITCHInitializer
 
-      cattr_accessor :config, :agi_server, :ami_client
+      cattr_accessor :config, :oes_server, :ies_client
       class << self
 
         def start

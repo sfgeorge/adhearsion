@@ -113,7 +113,7 @@ module Adhearsion
       end
     end
 
-    # Abstract superclass for AsteriskConfiguration and FreeSwitchConfiguration.
+    # Abstract superclass for AsteriskConfiguration and FreeSWITCHConfiguration.
     class TelephonyPlatformConfiguration < AbstractConfiguration
       attr_accessor :listening_port
       attr_accessor :listening_host
@@ -183,14 +183,14 @@ module Adhearsion
     end
     add_configuration_for :Asterisk
 
-    class FreeswitchConfiguration < TelephonyPlatformConfiguration
+    class FreeSWITCHConfiguration < TelephonyPlatformConfiguration
       class << self
         def default_listening_port
-          4572
+          8084
         end
       end
     end
-    add_configuration_for :Freeswitch
+    add_configuration_for :FreeSWITCH
 
     class DatabaseConfiguration < AbstractConfiguration
       attr_accessor :connection_options, :orm
