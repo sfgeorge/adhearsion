@@ -25,6 +25,7 @@ module Adhearsion
               end
 
               Events.trigger_immediately([:asterisk, :before_call], call)
+              Events.trigger_immediately([:call, :before_call], call)
           	  ahn_log.agi.debug "Handling call with variables #{call.variables.inspect}"
 
           	  return DialPlan::ConfirmationManager.handle(call) if DialPlan::ConfirmationManager.confirmation_call?(call)
@@ -35,6 +36,7 @@ module Adhearsion
     	      rescue Hangup
     	        ahn_log.agi "HANGUP event for call with uniqueid #{call.variables[:uniqueid].inspect} and channel #{call.variables[:channel].inspect}"
               Events.trigger_immediately([:asterisk, :after_call], call)
+              Events.trigger_immediately([:call, :after_call, call])
     	        call.hangup!
             rescue DialPlan::Manager::NoContextError => e
               ahn_log.agi e.message
@@ -43,6 +45,7 @@ module Adhearsion
               begin
                 ahn_log.agi "Received \"failed\" meta-call with :failed_reason => #{failed_call.call.failed_reason.inspect}. Executing Executing /asterisk/failed_call event callbacks."
                 Events.trigger [:asterisk, :failed_call], failed_call.call
+                Events.trigger [:call, :failed_call], failed_call.call
                 call.hangup!
               rescue => e
                 ahn_log.agi.error e
@@ -51,6 +54,7 @@ module Adhearsion
               begin
                 ahn_log.agi "Received \"h\" meta-call. Executing /asterisk/hungup_call event callbacks."
                 Events.trigger [:asterisk, :hungup_call], hungup_call.call
+                Events.trigger [:call, :hungup_call], hungup_call.call
                 call.hangup!
               rescue => e
                 ahn_log.agi.error e

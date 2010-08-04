@@ -12,14 +12,7 @@ module Adhearsion
           self.agi_server = initialize_agi
           self.ami_client = VoIP::Asterisk.manager_interface = initialize_ami if config.ami_enabled?
           join_server_thread_after_initialized
-
-          %w[/asterisk/manager_interface
-             /asterisk/before_call
-             /asterisk/after_call
-             /asterisk/hungup_call
-             /asterisk/failed_call].each {|name|
-            Events.register_namespace_name(name)
-          }
+          register_asterisk_event_hooks
 
           # Make sure we stop everything when we shutdown
           Events.register_callback(:shutdown) do
@@ -31,6 +24,16 @@ module Adhearsion
         def stop
           agi_server.graceful_shutdown
           ami_client.disconnect! if ami_client
+        end
+
+        def register_asterisk_event_hooks
+          %w[/asterisk/manager_interface
+             /asterisk/before_call
+             /asterisk/after_call
+             /asterisk/hungup_call
+             /asterisk/failed_call].each {|name|
+            Events.register_namespace_name(name)
+          }
         end
 
         private

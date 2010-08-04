@@ -38,6 +38,7 @@ context "The AGI server's serve() method" do
   end
 
   test 'should hand off a call to a ConfirmationManager if the request begins with confirm!' do
+    Adhearsion::Initializer::AsteriskInitializer.register_asterisk_event_hooks
     confirm_options = Adhearsion::DialPlan::ConfirmationManager.encode_hash_for_dial_macro_argument :timeout => 20, :key => "#"
     call_mock = flexmock "a call that has network_script as a variable", :variables => {:network_script => "confirm!#{confirm_options[/^M\(\^?(.+)\)$/,1]}"}, :unique_identifier => "X"
     manager_mock = flexmock 'a mock ConfirmationManager'
@@ -51,6 +52,7 @@ context "The AGI server's serve() method" do
   end
 
   test 'calling the serve() method invokes the before_call event' do
+    Adhearsion::Initializer::AsteriskInitializer.register_asterisk_event_hooks
     mock_io   = flexmock "mock IO object given to AGIServer#serve"
     mock_call = flexmock "mock Call"
     flexmock(Adhearsion).should_receive(:receive_call_from).once.with(mock_io).and_return mock_call
@@ -64,6 +66,7 @@ context "The AGI server's serve() method" do
   end
 
   test 'should execute the hungup_call event when a HungupExtensionCallException is raised' do
+    Adhearsion::Initializer::AsteriskInitializer.register_asterisk_event_hooks
     call_mock = flexmock 'a bogus call', :hungup_call? => true, :variables => {:extension => "h"}, :unique_identifier => "X"
     mock_env  = flexmock "A mock execution environment which gets passed along in the HungupExtensionCallException"
 
@@ -76,6 +79,7 @@ context "The AGI server's serve() method" do
   end
 
   test 'should execute the OnFailedCall hooks when a FailedExtensionCallException is raised' do
+    Adhearsion::Initializer::AsteriskInitializer.register_asterisk_event_hooks
     call_mock = flexmock 'a bogus call', :failed_call? => true, :variables => {:extension => "failed"}, :unique_identifier => "X"
     mock_env  = flexmock "A mock execution environment which gets passed along in the HungupExtensionCallException", :failed_reason => "does not matter"
 
@@ -460,6 +464,7 @@ agi_accountcode:
 
   module AgiServerTestHelper
     def stub_before_call_hooks!
+      Adhearsion::Initializer::AsteriskInitializer.register_asterisk_event_hooks
       flexstub(Adhearsion::Events).should_receive(:trigger).with([:asterisk, :before_call], Proc).and_return
     end
 
