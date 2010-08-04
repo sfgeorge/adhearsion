@@ -320,6 +320,7 @@ module Adhearsion
           override_variables_with_query_params
           remove_dashes_from_context_name
           coerce_type_of_number_into_symbol
+          remove_dashes_from_variable_names
         }
 
         class << self
@@ -427,7 +428,17 @@ module Adhearsion
 
           def remove_dashes_from_context_name(variables)
             returning variables do
-              variables[:context].gsub!('-', '_')
+              variables[:context].gsub!('-', '_') if variables.has_key?(:context)
+            end
+          end
+
+          def remove_dashes_from_variable_names(variables)
+            returning variables do
+              variables = variables.each do |key, val|
+                variables.delete(key)
+                key = key.to_s.gsub('-', '_').to_sym
+                variables[key] = val
+              end
             end
           end
 

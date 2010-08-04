@@ -183,14 +183,14 @@ module Adhearsion
     end
     add_configuration_for :Asterisk
 
-    class FreeSWITCHConfiguration < TelephonyPlatformConfiguration
+    class FreeswitchConfiguration < TelephonyPlatformConfiguration
       class << self
         def default_listening_port
           8084
         end
       end
     end
-    add_configuration_for :FreeSWITCH
+    add_configuration_for :Freeswitch
 
     class DatabaseConfiguration < AbstractConfiguration
       attr_accessor :connection_options, :orm
