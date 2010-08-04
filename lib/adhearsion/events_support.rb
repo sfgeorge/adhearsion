@@ -26,11 +26,10 @@ module Adhearsion
     DEFAULT_FRAMEWORK_EVENT_NAMESPACES = %w[
       /after_initialized
       /shutdown
-      /asterisk/manager_interface
-      /asterisk/before_call
-      /asterisk/after_call
-      /asterisk/hungup_call
-      /asterisk/failed_call
+      /call/before_call
+      /call/after_call
+      /call/hungup_call
+      /call/failed_call
     ]
 
     class << self

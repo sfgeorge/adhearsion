@@ -13,6 +13,14 @@ module Adhearsion
           self.ami_client = VoIP::Asterisk.manager_interface = initialize_ami if config.ami_enabled?
           join_server_thread_after_initialized
 
+          %w[/asterisk/manager_interface
+             /asterisk/before_call
+             /asterisk/after_call
+             /asterisk/hungup_call
+             /asterisk/failed_call].each {|name|
+            Events.register_namespace_name(name)
+          }
+
           # Make sure we stop everything when we shutdown
           Events.register_callback(:shutdown) do
             ahn_log.info "Shutting down with #{Adhearsion.active_calls.size} active calls"
