@@ -298,10 +298,15 @@ module Adhearsion
       end
 
       def set_originating_voip_platform!
-        # TODO: we can make this determination programatically at some point,
-        # but it will probably involve a bit more engineering than just a case statement (like
-        # subclasses of Call for the various platforms), so we'll be totally cheap for now.
-        self.originating_voip_platform = :asterisk
+        if self.variables.has_key?(:FreeSWITCH_Hostname)
+          self.originating_voip_platform = :freeswitch
+        else
+          # TODO: we can improve this determination at some point,
+          # but it will probably involve a bit more engineering than just a case statement (like
+          # subclasses of Call for the various platforms), so we'll be totally cheap for now.
+          self.originating_voip_platform = :asterisk
+        end
+
       end
 
     module Variables
@@ -311,6 +316,8 @@ module Adhearsion
         COERCION_ORDER = %w{
           remove_agi_prefixes_from_keys_and_strip_whitespace
           coerce_keys_into_symbols
+          remove_dashes_from_variable_names
+          unify_critical_variable_names
           coerce_extension_into_phone_number_object
           coerce_numerical_values_to_numerics
           replace_unknown_values_with_nil
@@ -320,7 +327,6 @@ module Adhearsion
           override_variables_with_query_params
           remove_dashes_from_context_name
           coerce_type_of_number_into_symbol
-          remove_dashes_from_variable_names
         }
 
         class << self
@@ -438,6 +444,23 @@ module Adhearsion
                 variables.delete(key)
                 key = key.to_s.gsub('-', '_').to_sym
                 variables[key] = val
+              end
+            end
+          end
+
+          # Adhearsion relies on certain variables being present to process
+          # calls.  This method will make sure that critical information is
+          # available.
+          def unify_critical_variable_names(variables)
+            returning variables do
+              if !variables.has_key?(:context)
+                # FreeSWITCH
+                variables[:context] = variables[:Caller_Context] if variables.has_key?(:Caller_Context)
+              end
+
+              if !variables.has_key?(:extension)
+                # FreeSWITCH
+                variables[:extension] = variables[:Channel_Destination_Number] if variables.has_key?(:Channel_Destination_Number)
               end
             end
           end

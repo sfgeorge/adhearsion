@@ -1,4 +1,3 @@
-
 require 'adhearsion/voip/menu_state_machine/menu_class'
 
 module Adhearsion

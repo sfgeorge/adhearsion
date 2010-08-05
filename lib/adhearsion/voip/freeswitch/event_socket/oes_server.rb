@@ -1,7 +1,7 @@
+require 'eventmachine'
 require 'adhearsion/voip/dsl/dialplan/thread_mixin'
 require 'adhearsion/voip/dsl/dialplan/parser'
 require 'adhearsion/voip/dsl/dialplan/dispatcher'
-require 'eventmachine'
 #require 'adhearsion/voip/freeswitch/basic_connection_manager'
 #require 'adhearsion/voip/freeswitch/freeswitch_dialplan_command_factory'
 
