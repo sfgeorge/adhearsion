@@ -8,7 +8,7 @@ require 'adhearsion/voip/freeswitch/event_socket/parser'
 
 module Adhearsion
   module VoIP
-    module FreeSWITCH
+    module Freeswitch
       module EventSocket
         module OESServer
 
@@ -30,12 +30,11 @@ module Adhearsion
 
           def post_init
             @buffer = ""
-            @pipe_out, @pipe_in = IO.pipe
-            send_message("connect")
+            @io = Socket.pair(Socket::AF_UNIX, Socket::SOCK_STREAM, 0)
 
             Thread.new do
               begin
-                call = Adhearsion.receive_call_from(@pipe_out)
+                call = Adhearsion.receive_call_from(@io)
 
                 # TODO A lot of this is duplicate code from AGI::Server.
                 # Consolidate this so we don't repeat ourselves
@@ -87,6 +86,9 @@ module Adhearsion
                 Adhearsion.remove_inactive_call call rescue nil
               end
             end
+
+            # Tell FreeSWITCH we are ready to process the call.
+            send_message("connect")
           end
 
           def receive_data(data)
@@ -94,7 +96,7 @@ module Adhearsion
             while message = @buffer.slice!( /^[^\n]*[\n]/m )
               message.chomp!
               ahn_log.oes.debug "<<< #{message}"
-              @pipe_in.print message + "\n"
+              @io.print message + "\n"
             end
           end
 

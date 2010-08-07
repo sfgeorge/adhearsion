@@ -262,10 +262,13 @@ module Adhearsion
     # Note: channel is used over unique ID because channel may be used to bridge two channels together.
     def unique_identifier
       case originating_voip_platform
-        when :asterisk
-          variables[:channel] || variables[:uniqueid] || object_id
-        else
-          raise NotImplementedError
+      when :asterisk
+        variables[:channel] || variables[:uniqueid] || object_id
+      when :freeswitch
+        # FIXME: Can we safely index by channel somehow?
+        variables[:unique_id]
+      else
+        raise NotImplementedError
       end
     end
 

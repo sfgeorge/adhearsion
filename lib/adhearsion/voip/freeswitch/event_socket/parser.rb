@@ -1,6 +1,6 @@
 module Adhearsion
   module VoIP
-    module FreeSwitch
+    module Freeswitch
       module EventSocket
         module Parser
 
@@ -28,6 +28,8 @@ module Adhearsion
             when "command/reply"
               # Standard response
               if message.has_key?(:reply_text)
+                # FIXME: A success message is like "+OK".  Is it safe to infer
+                # that error messages begin with a "-" and successes begin with "+"?
                 raise EventSocketProtocolError if message[:reply_text] =~ /^\-ERR/
               end
             when "text/disconnect-notice"

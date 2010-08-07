@@ -53,7 +53,9 @@ module Adhearsion
         end
 
         def execute(app, args = [])
-          message  = "call-command: execute\n"
+          uuid = @call.variables[:unique_id] ? @call.variables[:unique_id] : ""
+          message  = "sendmsg %s\n" % uuid
+          message += "call-command: execute\n"
           message += "execute-app-name: %s\n" % app.to_s
           message += "execute-app-arg: %s" % args.join(" ")
           send_message(message)

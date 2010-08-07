@@ -86,7 +86,7 @@ module Adhearsion
         def join_server_thread_after_initialized
           Events.register_callback(:after_initialized) do
             begin
-              VoIP::FreeSWITCH::EventSocket::OESServer.start(config.listening_port, config.listening_host)
+              VoIP::Freeswitch::EventSocket::OESServer.start(config.listening_port, config.listening_host)
             rescue => e
               ahn_log.fatal "Failed to start OES server! #{e.inspect}"
               abort
