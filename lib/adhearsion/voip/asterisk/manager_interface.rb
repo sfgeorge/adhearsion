@@ -29,8 +29,9 @@ module Adhearsion
         #
         class ManagerInterface
 
-          CAUSAL_EVENT_NAMES = %w[queuestatus sippeers parkedcalls status
-                                  dahdishowchannels coreshowchannels dbget] unless defined? CAUSAL_EVENT_NAMES
+          CAUSAL_EVENT_NAMES = %w[queuestatus sippeers iaxpeers parkedcalls
+                                  dahdishowchannels coreshowchannels dbget
+                                  status konferencelist] unless defined? CAUSAL_EVENT_NAMES
 
           class << self
 
@@ -71,10 +72,12 @@ module Adhearsion
               return nil unless has_causal_events?(action_name)
               action_name = action_name.to_s.downcase
                case action_name
-               when "sippeers"
+                 when "sippeers", "iaxpeers"
                  "peerlistcomplete"
                when "dbget"
                  "dbgetresponse"
+               when "konferencelist"
+                 "conferencelistcomplete"
                else
                    action_name + "complete"
                end
@@ -88,7 +91,8 @@ module Adhearsion
             :username       => "admin",
             :password       => "secret",
             :events         => true,
-            :auto_reconnect => true
+            :auto_reconnect => true,
+            :event_callback => proc { |event| Events.trigger(%w[asterisk manager_interface], event) }
           }.freeze unless defined? DEFAULT_SETTINGS
 
           attr_reader *DEFAULT_SETTINGS.keys
@@ -110,6 +114,7 @@ module Adhearsion
             @port           = options[:port]
             @events         = options[:events]
             @auto_reconnect = options[:auto_reconnect]
+            @event_callback = options[:event_callback]
 
             @sent_messages = {}
             @sent_messages_lock = Mutex.new
@@ -202,7 +207,7 @@ module Adhearsion
           def event_message_received(event)
             return if event.kind_of?(ManagerInterfaceResponse) && event["Message"] == "Authentication accepted"
             # TODO: convert the event name to a certain namespace.
-            Events.trigger %w[asterisk manager_interface], event
+            @event_callback.call(event)
           end
 
           def event_error_received(message)
@@ -407,7 +412,7 @@ module Adhearsion
             args[:exten] = options[:extension] if options[:extension]
             args[:caller_id] = options[:caller_id] if options[:caller_id]
             if options[:variables] && options[:variables].kind_of?(Hash)
-              args[:variable] = options[:variables].map {|pair| pair.join('=')}.join(AHN_CONFIG.asterisk.argument_delimiter)
+              args[:variable] = options[:variables].map {|pair| pair.join('=')}.join(@coreSettings["ArgumentDelimiter"])
             end
             originate args
           end
@@ -427,8 +432,25 @@ module Adhearsion
           class UnsupportedActionName < ArgumentError
             UNSUPPORTED_ACTION_NAMES = %w[
               queues
-              iaxpeers
             ] unless defined? UNSUPPORTED_ACTION_NAMES
+
+            # Blacklist some actions depends on the Asterisk version
+            def self.preinitialize(version)
+              if version < 1.8
+                %w[iaxpeers muteaudio mixmonitormute aocmessage].each do |action|
+                  UNSUPPORTED_ACTION_NAMES << action
+                end
+              end
+
+              if version < 1.6
+                %w[skinnydevices skinnyshowdevice skinnylines skinnyshowline coreshowchannels
+                   sipshowregistry getconfigjson bridge listallvoicemailusers dbdel dbdeltree
+                   insert jitterbufstats atxfer iaxregistry queuereload queuereset].each do |action|
+                  UNSUPPORTED_ACTION_NAMES << action
+                end
+              end
+            end
+
             def initialize(name)
               super "At the moment this AMI library doesn't support the #{name.inspect} action because it causes a protocol anomaly. Support for it will be coming shortly."
             end
@@ -556,6 +578,16 @@ module Adhearsion
               raise AuthenticationFailedException, "Incorrect username and password! #{response.message}"
             else
               ahn_log.ami "Successful AMI actions-only connection into #{@username}@#{@host}"
+              if @actions_lexer.ami_version < 1.1
+                @coreSettings = Hash.new
+                @coreSettings["AsteriskVersion"] = "1.4.0"
+                @coreSettings["AMIversion"] = "1.0"
+                @coreSettings["ArgumentDelimiter"] = "|"
+              else
+                @coreSettings = send_action_synchronously("CoreSettings").headers
+                @coreSettings["ArgumentDelimiter"] = ","
+              end
+              UnsupportedActionName::preinitialize(@coreSettings["AsteriskVersion"].to_f)
               response
             end
           end

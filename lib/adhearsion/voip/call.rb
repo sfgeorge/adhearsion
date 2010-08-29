@@ -53,7 +53,8 @@ module Adhearsion
       end
     end
 
-    # Searches all active calls by their unique_identifier. See Call#unique_identifier.
+    # Searches all active calls by their unique_identifier. See Call#unique_identifier. 
+    # Is this actually by channel?
     def find(id)
       atomically do
         return calls[id]
@@ -201,10 +202,15 @@ module Adhearsion
       end
     end
 
-    def tag(symbol)
-      raise ArgumentError, "tag must be a Symbol" unless symbol.is_a? Symbol
+    # This may still be a symbol, but no longer requires the tag to be a symbol although beware
+    # that using a symbol would create a memory leak if used improperly
+    # @param [String, Symbol] label String or Symbol with which to tag this call
+    def tag(label)
+      if ![String, Symbol].include?(label.class)
+        raise ArgumentError, "Tag must be a String or Symbol"
+      end
       @tag_mutex.synchronize do
-        @tags << symbol
+        @tags << label
       end
     end
 

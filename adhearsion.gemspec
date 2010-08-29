@@ -103,7 +103,7 @@ ADHEARSION_FILES = %w{
   lib/adhearsion/voip/menu_state_machine/matchers.rb
   lib/adhearsion/voip/menu_state_machine/menu_builder.rb
   lib/adhearsion/voip/menu_state_machine/menu_class.rb
-  lib/adhearsion/xmpp_bot.rb
+  lib/adhearsion/xmpp/connection.rb
   lib/theatre.rb
   lib/theatre/callback_definition_loader.rb
   lib/theatre/guid.rb
@@ -117,14 +117,14 @@ ADHEARSION_FILES = %w{
 
 Gem::Specification.new do |s|
   s.name = "adhearsion"
-  s.version = "0.8.5"
+  s.version = "0.8.6"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Jay Phillips", "Jason Goecke", "Ben Klang"]
 
-  s.date = "2008-08-21"
+  s.date = "2010-08-24"
   s.description = "Adhearsion is an open-source telephony development framework"
-  s.email = "Jason&Adhearsion.com"
+  s.email = "dev&Adhearsion.com"
   s.executables = ["ahn", "ahnctl", "jahn"]
 
   s.files = ADHEARSION_FILES

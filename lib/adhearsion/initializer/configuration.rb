@@ -129,8 +129,8 @@ module Adhearsion
       end
 
       def initialize(overrides = {})
-        @listening_port = self.class.default_listening_port
-        @listening_host = self.class.default_listening_host
+        @listening_port = overrides.has_key?(:port) ? overrides[:port] : self.class.default_listening_port
+        @listening_host = overrides.has_key?(:host) ? overrides[:host] : self.class.default_listening_host
         super
       end
     end
@@ -144,8 +144,10 @@ module Adhearsion
           4573
         end
 
+        # Keep Asterisk 1.4 (and prior) as the default to protect upgraders
+        # This setting only applies to AGI.  AMI delimiters are always
+        # auto-detected.
         def default_argument_delimiter
-          # Keep Asterisk 1.4 (and prior) as the default to protect upgraders
           '|'
         end
       end
@@ -264,7 +266,7 @@ module Adhearsion
 
     end
     add_configuration_for :Rails
-    
+
     class XMPPConfiguration < AbstractConfiguration
 
       attr_accessor :jid, :password, :server, :port
@@ -274,6 +276,12 @@ module Adhearsion
         @password = password
         @server = server
         @port = port
+      end
+
+      class << self
+        def default_port
+          5222
+        end
       end
 
       private
@@ -288,7 +296,7 @@ module Adhearsion
         raise ArgumentError, "Must supply a :jid argument to the XMPP initializer!" unless jid
         raise ArgumentError, "Must supply a :password argument to the XMPP initializer!" unless password
         if server
-          port ||= 5222
+          port ||= self.class.default_port
         else
           raise ArgumentError, "Must supply a :server argument as well as :port to the XMPP initializer!" if port
         end
