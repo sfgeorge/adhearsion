@@ -281,17 +281,30 @@ Adhearsion will abort until you fix this. Sorry for the incovenience.
 
     def init_modules
 
-      require 'adhearsion/initializer/asterisk.rb'
-      require 'adhearsion/initializer/freeswitch.rb'
-      require 'adhearsion/initializer/drb.rb'
-      require 'adhearsion/initializer/rails.rb'
-      require 'adhearsion/initializer/xmpp.rb'
+      if AHN_CONFIG.asterisk_enabled?
+        require 'adhearsion/initializer/asterisk.rb'
+        AsteriskInitializer.start
+      end
 
-      AsteriskInitializer.start   if AHN_CONFIG.asterisk_enabled?
-      FreeSWITCHInitializer.start if AHN_CONFIG.freeswitch_enabled?
-      DrbInitializer.start        if AHN_CONFIG.drb_enabled?
-      RailsInitializer.start      if AHN_CONFIG.rails_enabled?
-      XMPPInitializer.start       if AHN_CONFIG.xmpp_enabled?
+      if AHN_CONFIG.freeswitch_enabled?
+        require 'adhearsion/initializer/freeswitch.rb'
+        FreeSWITCHInitializer.start
+      end
+
+      if AHN_CONFIG.drb_enabled?
+        require 'adhearsion/initializer/drb.rb'
+        DrbInitializer.start
+      end
+
+      if AHN_CONFIG.rails_enabled?
+        require 'adhearsion/initializer/rails.rb'
+        RailsInitializer.start
+      end
+
+      if AHN_CONFIG.xmpp_enabled?
+        require 'adhearsion/initializer/xmpp.rb'
+        XMPPInitializer.start
+      end
 
     end
 
