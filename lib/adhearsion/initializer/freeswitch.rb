@@ -34,6 +34,7 @@ module Adhearsion
 
         def start
           self.config     = AHN_CONFIG.freeswitch
+          self.oes_server = initialize_oes
           #self.ies = VoIP::FreeSWITCH.eventsocket = initialize_ies if config.ies_enabled?
           join_server_thread_after_initialized
 
@@ -83,12 +84,18 @@ module Adhearsion
           end
         end
 
+        def initialize_oes
+          VoIP::CallServer.new :host => config.listening_host,
+                               :port => config.listening_port,
+                               :server_class => Adhearsion::VoIP::Freeswitch::OESServer
+        end
+
         def join_server_thread_after_initialized
           Events.register_callback(:after_initialized) do
             begin
-              VoIP::Freeswitch::EventSocket::OESServer.start(config.listening_port, config.listening_host)
+              oes_server.start
             rescue => e
-              ahn_log.fatal "Failed to start OES server! #{e.inspect}"
+              ahn_log.fatal "Failed to start FreeSWITCH OES server: #{e.inspect}"
               abort
             end
           end

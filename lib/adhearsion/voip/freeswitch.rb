@@ -1,4 +1,5 @@
 require File.dirname(__FILE__) + "/dsl/numerical_string"
+require File.dirname(__FILE__) + "/../voip/call_server"
+require File.dirname(__FILE__) + "/freeswitch/call_server"
 require File.dirname(__FILE__) + "/freeswitch/event_socket/parser"
-require File.dirname(__FILE__) + "/freeswitch/event_socket/oes_server"
 require File.dirname(__FILE__) + "/freeswitch/commands"

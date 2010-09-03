@@ -39,8 +39,8 @@ module Adhearsion
         private
 
         def initialize_agi
-          VoIP::Asterisk::AGI::Server.new :host => config.listening_host,
-                                          :port => config.listening_port
+          VoIP::CallServer.new :host => config.listening_host,
+                               :port => config.listening_port
         end
 
         def initialize_ami
@@ -72,7 +72,7 @@ module Adhearsion
             begin
               agi_server.start
             rescue => e
-              ahn_log.fatal "Failed to start AGI server! #{e.inspect}"
+              ahn_log.fatal "Failed to start AGI server: #{e.inspect}"
               abort
             end
           end
