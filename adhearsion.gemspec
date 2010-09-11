@@ -117,19 +117,19 @@ ADHEARSION_FILES = %w{
 
 Gem::Specification.new do |s|
   s.name = "adhearsion"
-  s.version = "0.8.6"
+  s.version = Adhearsion::VERSION::STRING
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Jay Phillips", "Jason Goecke", "Ben Klang"]
 
-  s.date = "2010-08-24"
+  s.date = Date.today.to_s
   s.description = "Adhearsion is an open-source telephony development framework"
   s.email = "dev&Adhearsion.com"
   s.executables = ["ahn", "ahnctl", "jahn"]
 
   s.files = ADHEARSION_FILES
 
-  s.has_rdoc = false
+  s.has_rdoc = true
   s.homepage = "http://adhearsion.com"
   s.require_paths = ["lib"]
   s.rubyforge_project = "adhearsion"
