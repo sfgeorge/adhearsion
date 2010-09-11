@@ -68,8 +68,7 @@ module Adhearsion
         end
 
         def api(cmd, *args)
-          message  = "sendmsg\n"
-          message += "api %s %s" % [cmd.to_s, args.join(" ")]
+          message  = "api %s %s" % [cmd.to_s, args.join(" ")]
           write message
           read
         end
@@ -127,26 +126,13 @@ module Adhearsion
           buffer = ''
           #key = sound_files.any? ? interruptible_play(*sound_files) || '' : wait_for_digit(timeout || -1)
 
-          execute(:play_and_get_digits, 0, number_of_digits, 1, timeout * 1000, terminating_key, "${base_dir}/sounds/en/us/callie/zrtp/8000/zrtp-enroll_welcome.wav", "x", "adhearsion_digits", '(\*#\d)+')
+          execute(:play_and_get_digits, 1, number_of_digits, 1, timeout * 1000, terminating_key, "${base_dir}/sounds/en/us/callie/zrtp/8000/zrtp-enroll_welcome.wav", "${base_dir}/sounds/en/us/callie/misc/48000/invalid_extension.wav", "adhearsion_digits", '[\*#\d]+')
           #execute(:play_and_get_digits, 0, number_of_digits, 1, timeout * 1000, terminating_key, "zrtp/zrtp-enroll_welcome.wav", "x", "adhearsion_digits", '(\*#\d)+')
 
-          api(:uuid_getvar, @call.variables[:Channel_Unique_ID], "adhearsion_digits")
+          res = api(:uuid_getvar, @call.variables[:Channel_Unique_ID], "adhearsion_digits")
+          return res[:content].pop if res.has_key?(:content)
+          return nil
 
-#          loop do
-#            return buffer if key.nil?
-#            if terminating_key
-#              if key == terminating_key
-#                return buffer
-#              else
-#                buffer << key
-#                return buffer if number_of_digits && number_of_digits == buffer.length
-#              end
-#            else
-#              buffer << key
-#              return buffer if number_of_digits && number_of_digits == buffer.length
-#            end
-#            key = wait_for_digit(timeout || -1)
-#          end
       	end
 
         def set_variable(varname, value)
@@ -169,9 +155,8 @@ module Adhearsion
 
         def read
           res = read_response
-          ahn_log.oes.debug "<<< #{res["reply_text"]}"
-          return true if res["reply_text"].downcase == "+ok"
-          return false
+          ahn_log.oes.debug "<<< #{res.inspect}"
+          res
         end
 
       end
