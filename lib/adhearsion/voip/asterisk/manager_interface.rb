@@ -585,24 +585,21 @@ module Adhearsion
           end
 
           def login_actions
-            action = send_action_asynchronously "Login", "Username" => @username, "Secret" => @password, "Events" => "Off"
-            response = action.response
-            if response.kind_of? ManagerInterfaceError
-              raise AuthenticationFailedException, "Incorrect username and password! #{response.message}"
+            response = send_action "Login", "Username" => @username, "Secret" => @password, "Events" => "Off"
+            ahn_log.ami "Successful AMI actions-only connection into #{@username}@#{@host}"
+            if @actions_lexer.ami_version < 1.1
+              @coreSettings = Hash.new
+              @coreSettings["AsteriskVersion"] = "1.4.0"
+              @coreSettings["AMIversion"] = "1.0"
+              @coreSettings["ArgumentDelimiter"] = "|"
             else
-              ahn_log.ami "Successful AMI actions-only connection into #{@username}@#{@host}"
-              if @actions_lexer.ami_version < 1.1
-                @coreSettings = Hash.new
-                @coreSettings["AsteriskVersion"] = "1.4.0"
-                @coreSettings["AMIversion"] = "1.0"
-                @coreSettings["ArgumentDelimiter"] = "|"
-              else
-                @coreSettings = send_action_synchronously("CoreSettings").headers
-                @coreSettings["ArgumentDelimiter"] = ","
-              end
-              UnsupportedActionName::preinitialize(@coreSettings["AsteriskVersion"].to_f)
-              response
+              @coreSettings = send_action("CoreSettings").headers
+              @coreSettings["ArgumentDelimiter"] = ","
             end
+            UnsupportedActionName::preinitialize(@coreSettings["AsteriskVersion"])
+            response
+          rescue ManagerInterfaceError => response
+            raise AuthenticationFailedException, "Incorrect username and password! #{response.message}"
           end
 
           def disconnect_events_connection
@@ -620,8 +617,11 @@ module Adhearsion
           # it goes straight to the EventSocket connection (bypassing the @write_queue).
           #
           def login_events
-            login_action = ManagerInterfaceAction.new "Login", "Username" => @username, "Secret" => @password, "Events" => "On"
-            @events_connection.send_data login_action.to_s
+
+            response = send_action "Login", "Username" => @username, "Secret" => @password, "Events" => "On"
+            ahn_log.ami "Successful AMI events connection into #{@username}@#{@host}"
+          rescue ManagerInterfaceError
+            raise AuthenticationFailedException, "Incorrect username and password! #{response.message}"
           end
 
           def parse_options(options)
