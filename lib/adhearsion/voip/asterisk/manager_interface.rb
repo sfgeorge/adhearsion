@@ -418,24 +418,35 @@ module Adhearsion
           # This class will be removed once this AMI library fully supports all known protocol anomalies.
           #
           class UnsupportedActionName < ArgumentError
-            UNSUPPORTED_ACTION_NAMES = %w[
-              queues
-            ] unless defined? UNSUPPORTED_ACTION_NAMES
+            UNSUPPORTED_ACTION_NAMES = [] unless defined? UNSUPPORTED_ACTION_NAMES
 
             # Blacklist some actions depends on the Asterisk version
-            def self.preinitialize(version)
-              if version < 1.8
-                %w[iaxpeers muteaudio mixmonitormute aocmessage].each do |action|
-                  UNSUPPORTED_ACTION_NAMES << action
-                end
+            def self.preinitialize(version = nil)
+              # Queues are unsupported because they completely break the AMI protocol.
+              # Example taken from the wire on Asterisk 1.8.3.2 (and prior):
+              #
+              # Action: queues
+              #
+              # No queues.
+              #
+              version = Adhearsion::PkgVersion.new(version) unless version.is_a?(Adhearsion::PkgVersion)
+
+              # Remove any settings from a previous connection
+              UNSUPPORTED_ACTION_NAMES.clear
+
+              UNSUPPORTED_ACTION_NAMES << "queues"
+
+              if version < Adhearsion::PkgVersion.new("1.8.0")
+                # IAXPeers was broken prior to Asterisk 1.8.
+                # The rest of the actions were added in Asterisk 1.8.0
+                UNSUPPORTED_ACTION_NAMES.concat(%w[iaxpeers muteaudio mixmonitormute aocmessage])
               end
 
-              if version < 1.6
-                %w[skinnydevices skinnyshowdevice skinnylines skinnyshowline coreshowchannels
-                   sipshowregistry getconfigjson bridge listallvoicemailusers dbdel dbdeltree
-                   insert jitterbufstats atxfer iaxregistry queuereload queuereset].each do |action|
-                  UNSUPPORTED_ACTION_NAMES << action
-                end
+              if version < Adhearsion::PkgVersion.new("1.6.0")
+                # These actions were added in Asterisk 1.6
+                UNSUPPORTED_ACTION_NAMES.concat(%w[atxfer bridge coreshowchannels dbdel dbdeltree
+                  getconfigjson iaxregistry insert jitterbufstats listallvoicemailusers queuereload
+                  queuereset sipshowregistry skinnydevices skinnylines skinnyshowdevice skinnyshowline])
               end
             end
 

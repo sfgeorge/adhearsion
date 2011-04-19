@@ -280,6 +280,23 @@ describe "ManagerInterface" do
 
   end
 
+  it "the Queues action should not respond with an action id" do
+    new_manager_without_events
+    @Manager::ManagerInterface.replies_with_action_id?("Queues").should == false
+  end
+
+  it "the IAXPeers action is not supported on Asterisk less than version 1.8" do
+    new_manager_without_events
+    @Manager::ManagerInterface::UnsupportedActionName.preinitialize("1.6.2.3")
+    @Manager::ManagerInterface.replies_with_action_id?("IAXPeers").should == false
+  end
+
+  it "the IAXPeers action IS supported on Asterisk >= version 1.8" do
+    new_manager_without_events
+    @Manager::ManagerInterface::UnsupportedActionName.preinitialize("1.8.0")
+    @Manager::ManagerInterface.replies_with_action_id?("IAXPeers").should == true
+  end
+
   # it "should raise an error if trying to send an action before connecting" do
   #   the_following_code {
   #     new_manager_without_events.send_action "foo"
@@ -327,6 +344,7 @@ describe "ManagerInterface" do
   end
 
   it "unsupported actions" do
+    @Manager::ManagerInterface::UnsupportedActionName.preinitialize
     @Manager::ManagerInterface::UnsupportedActionName::UNSUPPORTED_ACTION_NAMES.empty?.should_not be true
     @Manager::ManagerInterface::UnsupportedActionName::UNSUPPORTED_ACTION_NAMES.each do |action_name|
       manager = new_manager_without_events
@@ -429,19 +447,6 @@ describe "Class methods of ManagerInterface" do
 
   it "the SIPPeers actions should be a causal event" do
     @ManagerInterface.has_causal_events?("SIPPeers").should be true
-  end
-
-  it "the Queues action should not respond with an action id" do
-    @ManagerInterface.replies_with_action_id?("Queues").should == false
-  end
-
-  it "the IAXPeers action should not respond with an action id" do
-    # FIXME: This test relies on the side effect that earlier tests have run
-    # and initialized the UnsupportedActionName::UNSUPPORTED_ACTION_NAMES
-    # constant for an "unknown" version of Asterisk.  This should be fixed
-    # to be more specific about which version of Asterisk is under test.
-    # IAXPeers is supported (with Action IDs!) since Asterisk 1.8
-    @ManagerInterface.replies_with_action_id?("IAXPeers").should == false
   end
 
   it "the ParkedCalls terminator event" do
