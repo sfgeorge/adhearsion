@@ -193,7 +193,7 @@ describe "ManagerInterface" do
     flexmock(FutureResource).new_instances.should_receive(:resource).once.and_return @Manager::ManagerInterfaceError.new
 
     manager            = new_manager_without_events
-    actions_connection = mock_for_next_created_socket
+    mock_for_next_created_socket
     flexmock(manager).should_receive(:login_actions).once.and_return
 
     manager.connect!
