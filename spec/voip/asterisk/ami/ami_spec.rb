@@ -259,7 +259,7 @@ describe "ManagerInterface" do
   end
 
   it "a failed login on the actions socket raises an AuthenticationFailedException" do
-    manager = new_manager_with_events
+    manager = new_manager_without_events
 
     mock_socket = flexmock("mock TCPSocket")
 
