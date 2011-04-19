@@ -280,24 +280,6 @@ module Adhearsion
           end
 
           ##
-          # Used to directly send a new action to Asterisk. Note: NEVER supply an ActionID; these are handled internally.
-          #
-          # @param [String, Symbol] action_name The name of the action (e.g. Originate)
-          # @param [Hash] headers Other key/value pairs to send in this action. Note: don't provide an ActionID
-          # @return [FutureResource] Call resource() on this object if you wish to access the response (optional). Note: if the response has not come in yet, your Thread will wait until it does.
-          #
-          def send_action_asynchronously(action_name, headers={})
-            check_action_name action_name
-            action = ManagerInterfaceAction.new(action_name, headers)
-            if action.replies_with_action_id?
-              @write_queue << action
-              action
-            else
-              raise NotImplementedError
-            end
-          end
-
-          ##
           # Sends an action over the AMI connection and blocks your Thread until the response comes in. If there was an error
           # for some reason, the error will be raised as an ManagerInterfaceError.
           #
@@ -306,14 +288,17 @@ module Adhearsion
           # @raise [ManagerInterfaceError] When Asterisk can't execute this action, it sends back an Error which is converted into an ManagerInterfaceError object and raised. Access ManagerInterfaceError#message for the reported message from Asterisk.
           # @return [ManagerInterfaceResponse, ImmediateResponse] Contains the response from Asterisk and all headers
           #
-          def send_action_synchronously(*args)
-            send_action_asynchronously(*args).response.tap do |response|
-              raise response if response.kind_of?(ManagerInterfaceError)
+          def send_action(action_name, headers = {})
+            check_action_name action_name
+            action = ManagerInterfaceAction.new(action_name, headers)
+            if action.replies_with_action_id?
+              @write_queue << action
+            else
+              raise NotImplementedError
             end
+            raise action.response if action.response.is_a?(ManagerInterfaceError)
+            action.response
           end
-
-          alias send_action send_action_synchronously
-
 
           #######                                              #######
           ###########                                      ###########
