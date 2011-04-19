@@ -143,7 +143,7 @@ describe "ManagerInterface" do
     }.should raise_error ArgumentError
   end
 
-  it "a received message that matches an action ID for which we're waiting" do
+  it "should receive a message that matches an action ID for which we're waiting" do
     action_id = "OHAILOLZ"
 
     manager = new_manager_without_events
