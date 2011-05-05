@@ -485,7 +485,7 @@ module Adhearsion
           terminating_key = options.delete(:accept_key)
           terminating_key = if terminating_key
             terminating_key.to_s
-          elsif number_of_digits.nil? && !terminating_key.equal?(false)
+          elsif !terminating_key.equal?(false)
             '#'
           end
 
