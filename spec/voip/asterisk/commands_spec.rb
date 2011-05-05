@@ -434,6 +434,13 @@ describe 'input command' do
     mock_call.input(number_of_digits, :accept_key => '#').should == '123'
   end
 
+  it 'should default the :accept_key to "#" when collecting a finite number of digits' do
+    all_digits = %w[1 2 3 # 4 5 6 7 8 9]
+    number_of_digits = 5
+    mock_call.should_receive(:wait_for_digit).times(4).and_return(*all_digits)
+    mock_call.input(number_of_digits).should == '123'
+  end
+
   it 'passes wait_for_digit the :timeout option when one is given' do
     mock_call.should_receive(:interruptible_play).never
     mock_call.should_receive(:wait_for_digit).twice.and_return '1', '2'
