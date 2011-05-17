@@ -107,6 +107,16 @@ module DialplanCommandTestHelpers
       pbx_should_respond_with_success digit.kind_of?(String) ? digit[0] : digit
     end
 
+    def pbx_should_respond_with_playback_success
+      pbx_should_respond_with_success(0)
+      mock_call.should_receive(:get_variable).once.with('PLAYBACKSTATUS').and_return 'SUCCESS'
+    end
+
+    def pbx_should_respond_with_playback_failure
+      pbx_should_respond_with_success(0)
+      mock_call.should_receive(:get_variable).once.with('PLAYBACKSTATUS').and_return 'FAILED'
+    end
+
     def pbx_should_respond_with_a_wait_for_digit_timeout
       pbx_should_respond_with_successful_background_response 0
     end
@@ -313,6 +323,33 @@ describe 'play command' do
     audio_files = ["cents-per-minute", 'o-hai']
     mock_call.play audio_files
     pbx_was_asked_to_play audio_files
+  end
+
+  it 'should yield if an audio file cannot be found' do
+    pbx_should_respond_with_playback_failure
+    audio_file = 'nixon-tapes'
+    the_following_code {
+      mock_call.play(audio_file) do |missed_audio_file|
+        missed_audio_file.should == audio_file
+        throw :block_invoked
+      end
+    }.should throw_symbol :block_invoked
+    pbx_was_asked_to_play audio_file
+  end
+
+  it 'should yield when audio files cannot be found' do
+    pbx_should_respond_with_playback_failure
+    pbx_should_respond_with_playback_failure
+    pbx_should_respond_with_playback_success # 'goose' is the only audio to be found
+    pbx_should_respond_with_playback_failure
+    audio_files = ['duck', 'duck', 'goose', 'moose']
+
+    missing_files = []
+    mock_call.play(audio_files) do |missed_audio_file|
+      missing_files << missed_audio_file
+    end
+    pbx_was_asked_to_play audio_files
+    missing_files.should == ['duck', 'duck', 'moose']
   end
 
   it 'If a number is passed to play(), the saynumber application is executed with the number as an argument' do
