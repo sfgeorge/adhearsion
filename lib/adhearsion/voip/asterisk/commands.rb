@@ -195,10 +195,10 @@ module Adhearsion
         # @example Play two sound files
         #   play "you-sound-cute", "what-are-you-wearing"
         #
-        def play(*arguments)
+        def play(*arguments, &block)
           unless play_time(arguments)
             arguments.flatten.each do |argument|
-              play_numeric(argument) || play_string(argument)
+              play_numeric(argument) || play_string(argument, &block)
             end
           end
         end
@@ -1087,8 +1087,12 @@ module Adhearsion
             end
           end
 
-          def play_string(argument)
-            execute(:playback, argument)
+          def play_string(argument, &block)
+            response = execute(:playback, argument)
+            if block_given? && get_variable('PLAYBACKSTATUS') != 'SUCCESS'
+              yield argument
+            end
+            response
           end
 
           def play_sound_files_for_menu(menu_instance, sound_files)
