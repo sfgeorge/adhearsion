@@ -194,6 +194,9 @@ module Adhearsion
         #   play %w"a-connect-charge-of 22 cents-per-minute will-apply"
         # @example Play two sound files
         #   play "you-sound-cute", "what-are-you-wearing"
+        # @example Play sound files or run a block when a file can't be found.
+        #   # Since "howdy-doody" doesn't exist, this speaks "howdy doody" over TTS (experimental) and then plays the 'hello-world' sound file.
+        #   play "howdy-doody", "hello-world" { |missing_audio| speak missing_audio.gsub('-', ' ') }
         #
         def play(*arguments, &block)
           unless play_time(arguments)
