@@ -28,6 +28,7 @@ module Adhearsion
         private
 
         def initialize_agi
+          trap 'SIGHUP' { ahn_log 'Caught a SIGHUP in parent process' }
           VoIP::Asterisk::AGI::Server.new :host => config.listening_host,
                                           :port => config.listening_port
         end

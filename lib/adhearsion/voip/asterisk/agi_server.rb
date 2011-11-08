@@ -18,6 +18,7 @@ module Adhearsion
 
             def serve(io)
               begin
+                trap 'SIGHUP' { ahn_log 'Caught a SIGHUP in child process' }
                 call = Adhearsion.receive_call_from(io)
               rescue EOFError
                 # We didn't get the initial headers we were expecting
