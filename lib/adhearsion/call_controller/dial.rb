@@ -210,8 +210,10 @@ module Adhearsion
         # Optionally executes call controllers on calls once split, where 'current_dial' is available in controller metadata in order to perform further operations on the Dial, including rejoining and termination.
         # @param [Hash] targets Target call controllers to execute on call legs once split
         # @option options [Adhearsion::CallController] :main The call controller class to execute on the 'main' call leg (the one who initiated the #dial)
+        # @option options [Hash] :main_metadata Metadata to set on the :main controller before executing it
         # @option options [Proc] :main_callback A block to call when the :main controller completes
         # @option options [Adhearsion::CallController] :others The call controller class to execute on the 'other' call legs (the ones created as a result of the #dial)
+        # @option options [Hash] :others_metadata Metadata to set on the :others controller before executing it
         # @option options [Proc] :others_callback A block to call when the :others controller completes on an individual call
         def split(targets = {})
           @splitting = true
@@ -221,16 +223,21 @@ module Adhearsion
             end
           end.compact
           logger.info "Splitting off peer calls #{calls_to_split.map(&:first).join ", "}"
+          controller_metadata = {'current_dial' => self}
+          others_metadata = controller_metadata.clone
+          others_metadata.merge!(targets[:others_metadata]) if targets.key? :others_metadata
           calls_to_split.each do |id, call|
             ignoring_ended_calls do
               logger.debug "Unjoining peer #{call.id} from #{join_target}"
               ignoring_missing_joins { call.unjoin join_target }
               if split_controller = targets[:others]
                 logger.info "Executing controller #{split_controller} on split call #{call.id}"
-                call.execute_controller split_controller.new(call, 'current_dial' => self), targets[:others_callback]
+                call.execute_controller split_controller.new(call, others_metadata), targets[:others_callback]
               end
             end
           end
+          main_metadata = controller_metadata.clone
+          main_metadata.merge!(targets[:main_metadata]) if targets.key? :main_metadata
           ignoring_ended_calls do
             if join_target != @call
               logger.debug "Unjoining main call #{@call.id} from #{join_target}"
@@ -238,7 +245,7 @@ module Adhearsion
             end
             if split_controller = targets[:main]
               logger.info "Executing controller #{split_controller} on main call"
-              @call.execute_controller split_controller.new(@call, 'current_dial' => self), targets[:main_callback]
+              @call.execute_controller split_controller.new(@call, main_metadata), targets[:main_callback]
             end
           end
         end
