@@ -46,6 +46,8 @@ module Adhearsion
       #
       # @option options [Array, #call] :ringback A collection of audio (see #play for acceptable values) to render as a replacement for ringback. If a callback is passed, it will be used to start ringback, and must return something that responds to #stop! to stop it.
       #
+      # @yield [Adhearsion::CallController::Dial::Dial] Provides the newly initialized Dial object to the given block, particularly useful in order to obtain a reference to it for later use.
+      #
       # @example Make a call to the PSTN using my SIP provider for VoIP termination
       #   dial "SIP/19095551001@my.sip.voip.terminator.us"
       #
@@ -59,6 +61,7 @@ module Adhearsion
       #
       def dial(to, options = {})
         dial = Dial.new to, options, call
+        yield dial if block_given?
         dial.run(self)
         dial.await_completion
         dial.terminate_ringback
@@ -73,9 +76,12 @@ module Adhearsion
       #
       # @option options [CallController] :apology controller to execute on calls which lose the race to complete confirmation before they are hung up
       #
+      # @yield [Adhearsion::CallController::Dial::ParallelConfirmationDial] Provides the newly initialized ParallelConfirmationDial object to the given block, particularly useful in order to obtain a reference to it for later use.
+      #
       # @see #dial
       def dial_and_confirm(to, options = {})
         dial = ParallelConfirmationDial.new to, options, call
+        yield dial if block_given?
         dial.run(self)
         dial.await_completion
         dial.terminate_ringback
