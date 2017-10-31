@@ -239,7 +239,7 @@ module Adhearsion
       on_end do |event|
         logger.info "Call #{from} -> #{to} ended due to #{event.reason}#{" (code #{event.platform_code})" if event.platform_code}"
         @end_time = event.timestamp.to_time
-        @duration = @end_time - @start_time if @start_time
+        @duration = @end_time.to_i - @start_time.to_i if @start_time
         clear_from_active_calls
         @end_reason = event.reason
         @end_code = event.platform_code
@@ -254,7 +254,7 @@ module Adhearsion
       if @duration
         @duration
       elsif @start_time
-        Time.now - @start_time
+        Time.now.to_i - @start_time.to_i
       else
         0.0
       end
