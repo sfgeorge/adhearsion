@@ -173,19 +173,19 @@ module Adhearsion
             end
 
             new_call.on_answer do |event|
-              next unless @call.alive? && @call.active?
-
               pre_confirmation_tasks new_call
 
-              new_call.on_joined @call do |joined|
-                join_status.started joined.timestamp.to_time
-              end
+              if @call.alive? && @call.active?
+                new_call.on_joined @call do |joined|
+                  join_status.started joined.timestamp.to_time
+                end
 
-              new_call.on_unjoined @call do |unjoined|
-                join_status.ended unjoined.timestamp.to_time
-                unless @splitting
-                  new_call["dial_countdown_#{@id}"] = true
-                  @latch.countdown!
+                new_call.on_unjoined @call do |unjoined|
+                  join_status.ended unjoined.timestamp.to_time
+                  unless @splitting
+                    new_call["dial_countdown_#{@id}"] = true
+                    @latch.countdown!
+                  end
                 end
               end
 
@@ -197,7 +197,7 @@ module Adhearsion
                 condition.wait
               end
 
-              if new_call.alive? && new_call.active? && status.result != :answer
+              if new_call.alive? && new_call.active? && status.result != :answer && @call.alive? && @call.active?
                 logger.info "#dial joining call #{new_call.id} to #{@call.id}"
                 pre_join_tasks new_call
                 @call.answer
