@@ -112,11 +112,7 @@ module Adhearsion
           track_originating_call
           start_ringback controller
           prep_calls
-          begin
-            place_calls
-          rescue Adhearsion::Call::Hangup => e
-            logger.info "#{self.class}.#{__method__}:#{__LINE__}: Party Hangup - #{e.inspect}\n  #{(e.backtrace || ['EMPTY BACKTRACE']).join("\n  ")}"
-          end
+          place_calls
         end
 
         #
