@@ -193,15 +193,17 @@ module Adhearsion
                 condition.wait
               end
 
-              if new_call.alive? && new_call.active? && status.result != :answer && @call.alive? && @call.active?
-                logger.info "#dial joining call #{new_call.id} to #{@call.id}"
+              if new_call.alive? && new_call.active? && status.result != :answer
                 pre_join_tasks new_call
-                @call.answer
-                new_call.join @join_target, @join_options
-                unless @join_target == @call
-                  @call.join @join_target, @join_options
+                if @call.alive? && @call.active?
+                  logger.info "#dial joining call #{new_call.id} to #{@call.id}"
+                  @call.answer
+                  new_call.join @join_target, @join_options
+                  unless @join_target == @call
+                    @call.join @join_target, @join_options
+                  end
+                  status.answer!
                 end
-                status.answer!
               elsif status.result == :answer
                 join_status.lost_confirmation!
               end
