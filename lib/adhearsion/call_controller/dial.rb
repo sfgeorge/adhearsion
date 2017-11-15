@@ -151,15 +151,17 @@ module Adhearsion
             end
 
             new_call.on_answer do |event|
-              new_call.on_joined @call do |joined|
-                join_status.started joined.timestamp.to_time
-              end
+              if @call.alive? && @call.active?
+                new_call.on_joined @call do |joined|
+                  join_status.started joined.timestamp.to_time
+                end
 
-              new_call.on_unjoined @call do |unjoined|
-                join_status.ended unjoined.timestamp.to_time
-                unless @splitting
-                  new_call["dial_countdown_#{@id}"] = true
-                  @latch.countdown!
+                new_call.on_unjoined @call do |unjoined|
+                  join_status.ended unjoined.timestamp.to_time
+                  unless @splitting
+                    new_call["dial_countdown_#{@id}"] = true
+                    @latch.countdown!
+                  end
                 end
               end
 
@@ -172,14 +174,16 @@ module Adhearsion
               end
 
               if new_call.active? && status.result != :answer
-                logger.info "#dial joining call #{new_call.id} to #{@call.id}"
                 pre_join_tasks new_call
-                @call.answer
-                new_call.join @join_target, @join_options
-                unless @join_target == @call
-                  @call.join @join_target, @join_options
+                if @call.alive? && @call.active?
+                  logger.info "#dial joining call #{new_call.id} to #{@call.id}"
+                  @call.answer
+                  new_call.join @join_target, @join_options
+                  unless @join_target == @call
+                    @call.join @join_target, @join_options
+                  end
+                  status.answer!
                 end
-                status.answer!
               elsif status.result == :answer
                 join_status.lost_confirmation!
               end
