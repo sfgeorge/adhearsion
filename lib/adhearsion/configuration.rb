@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 require 'loquacious'
+require 'logging'
 
 module Adhearsion
   class Configuration
@@ -53,6 +54,10 @@ module Adhearsion
           formatter nil, :desc => <<-__
             A log formatter to apply to all active outputters. If nil, the Adhearsion default formatter will be used.
           __
+          default_formatter ::Logging::Layouts::Pattern, :desc => <<-__
+            A log layout to apply to stdout outputters.
+          __
+
         }
 
         after_hangup_lifetime 1, :transform => Proc.new { |v| v.to_i }, :desc => <<-__
