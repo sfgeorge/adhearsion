@@ -224,7 +224,7 @@ module Adhearsion
             File.expand_path(Adhearsion.config.root.dup.concat("/").concat(a))
           end
           ::Logging.appenders.file(f,
-            :layout => Adhearsion.config.platform.logging.default_formatter.new(
+            :layout => Adhearsion.config.platform.logging.formatter_class.new(
               Adhearsion::Logging.adhearsion_pattern_options
             ),
            :auto_flushing => 2,
