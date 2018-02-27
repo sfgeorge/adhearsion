@@ -55,7 +55,7 @@ module Adhearsion
             A log formatter to apply to all active outputters. If nil, the Adhearsion default formatter will be used.
           __
           formatter_class ::Logging::Layouts::Pattern, :desc => <<-__
-            A log layout to apply to stdout outputters.
+            A log formatter class to instantiate for all active outputters.
           __
 
         }
