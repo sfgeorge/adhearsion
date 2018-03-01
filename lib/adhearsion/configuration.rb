@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 require 'loquacious'
+require 'logging'
 
 module Adhearsion
   class Configuration
@@ -50,8 +51,12 @@ module Adhearsion
             An array of log outputters to use. The default is to log to stdout and log/adhearsion.log.
             Each item must be either a string to use as a filename, or a valid Logging appender (see http://github.com/TwP/logging)
           __
+          formatter_class ::Logging::Layouts::Pattern, :desc => <<-__
+            The log formatter class (inheriting from ::Logging::Layout) from which to instantiate each log outputter formatter, when creating log outputters.
+          __
           formatter nil, :desc => <<-__
-            A log formatter to apply to all active outputters. If nil, the Adhearsion default formatter will be used.
+            A log formatter object (an instance of a ::Logging::Layout class) to apply to all active outputters.
+            If provided, it will replace the "formatter_class" instances (defined above) on each existing log outputter.
           __
         }
 

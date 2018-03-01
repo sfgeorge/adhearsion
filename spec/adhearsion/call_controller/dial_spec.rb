@@ -1943,7 +1943,7 @@ module Adhearsion
                 end
               end
 
-              context "should pass :main_metadata and :others_metadata on respective controllers", focus: true do
+              context "should pass :main_metadata and :others_metadata on respective controllers" do
                 let(:split_parameters) {{main: main_split_controller, others: others_split_controller, main_callback: ->(call) {self.callback(call)}, others_callback: ->(call) {self.callback(call)}}}
                 let(:main_metadata) {{'apple' => {'color' => 'red'}}}
                 let(:others_metadata) {{'orange' => {'shape' => 'sphere'}}}
