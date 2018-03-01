@@ -51,13 +51,13 @@ module Adhearsion
             An array of log outputters to use. The default is to log to stdout and log/adhearsion.log.
             Each item must be either a string to use as a filename, or a valid Logging appender (see http://github.com/TwP/logging)
           __
-          formatter nil, :desc => <<-__
-            A log formatter to apply to all active outputters. If nil, the Adhearsion default formatter will be used.
-          __
           formatter_class ::Logging::Layouts::Pattern, :desc => <<-__
-            A log formatter class to instantiate for all active outputters.
+            The log formatter class (inheriting from ::Logging::Layout) from which to instantiate each log outputter formatter, when creating log outputters.
           __
-
+          formatter nil, :desc => <<-__
+            A log formatter object (an instance of a ::Logging::Layout class) to apply to all active outputters.
+            If provided, it will replace the "formatter_class" instances (defined above) on each existing log outputter.
+          __
         }
 
         after_hangup_lifetime 1, :transform => Proc.new { |v| v.to_i }, :desc => <<-__
