@@ -20,6 +20,7 @@ describe Adhearsion::Rayo::Component::Input do
                 :recognition_timeout  => 0,
                 :sensitivity          => 0.5,
                 :min_confidence       => 0.5,
+                :speech_complete_timeout => 1000,
                 :headers              => { 'Confidence-Threshold' => '0.5', 'Sensitivity-Level' => '0.2' }
     end
 
@@ -78,6 +79,11 @@ describe Adhearsion::Rayo::Component::Input do
       it { is_expected.to eq(0.5) }
     end
 
+    describe '#speech_complete_timeout' do
+      subject { super().speech_complete_timeout }
+      it { is_expected.to eq 1000 }
+    end
+
     context "with multiple grammars" do
       subject do
         described_class.new :grammars => [
@@ -131,6 +137,7 @@ describe Adhearsion::Rayo::Component::Input do
         expect(new_instance.recognition_timeout).to eq(0)
         expect(new_instance.sensitivity).to eq(0.5)
         expect(new_instance.min_confidence).to eq(0.5)
+        expect(new_instance.speech_complete_timeout).to eq(1000)
         expect(new_instance.headers).to eq({ 'Confidence-Threshold' => '0.5', 'Sensitivity-Level' => '0.2' })
       end
 
@@ -162,7 +169,8 @@ describe Adhearsion::Rayo::Component::Input do
        inter-digit-timeout="2000"
        recognition-timeout="0"
        sensitivity="0.5"
-       min-confidence="0.5">
+       min-confidence="0.5"
+       speech-complete-timeout="1000">
   <grammar content-type="application/grammar+custom">
     <![CDATA[ [5 DIGITS] ]]>
   </grammar>
@@ -232,6 +240,11 @@ describe Adhearsion::Rayo::Component::Input do
     describe '#min_confidence' do
       subject { super().min_confidence }
       it { is_expected.to eq(0.5) }
+    end
+
+    describe '#speech_complete_timeout' do
+      subject { super().speech_complete_timeout }
+      it { is_expected.to eq 1000 }
     end
 
     context "without any grammars" do

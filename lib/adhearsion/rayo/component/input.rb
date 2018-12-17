@@ -44,6 +44,9 @@ module Adhearsion
         # @return [Integer] Indicates the amount of time during input that recognition will occur before a timeout is triggered.
         attribute :recognition_timeout, Integer
 
+        # @return [Integer] Indicates the length of time additional input may be accepted following a match before returning the result.
+        attribute :speech_complete_timeout, Integer
+
         attribute :grammars, Array, default: []
         def grammars=(others)
           super others.map { |other| Grammar.new(other) }
@@ -77,7 +80,8 @@ module Adhearsion
             'initial-timeout' => initial_timeout,
             'inter-digit-timeout' => inter_digit_timeout,
             'dtmf-term-timeout' => dtmf_term_timeout,
-            'recognition-timeout' => recognition_timeout
+            'recognition-timeout' => recognition_timeout,
+            'speech-complete-timeout' => speech_complete_timeout
           }
         end
 
