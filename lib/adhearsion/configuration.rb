@@ -1,7 +1,6 @@
 # encoding: utf-8
 
 require 'loquacious'
-require 'logging'
 
 module Adhearsion
   class Configuration
@@ -60,12 +59,8 @@ module Adhearsion
           level :info, :transform => Proc.new { |v| v.to_sym }, :desc => <<-__
             Supported levels (in increasing severity) -- :trace < :debug < :info < :warn < :error < :fatal
           __
-          formatter_class ::Logging::Layouts::Pattern, :desc => <<-__
-            The log formatter class (inheriting from ::Logging::Layout) from which to instantiate each log outputter formatter, when creating log outputters.
-          __
           formatter nil, :desc => <<-__
-            A log formatter object (an instance of a ::Logging::Layout class) to apply to all active outputters.
-            If provided, it will replace the "formatter_class" instances (defined above) on each existing log outputter.
+            A log formatter to apply to the stream. If nil, the Adhearsion default formatter will be used.
           __
         }
 

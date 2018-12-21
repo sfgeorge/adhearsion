@@ -82,7 +82,7 @@ module Adhearsion
       def default_appenders
         [::Logging.appenders.stdout(
            'stdout',
-           :layout => Adhearsion.config.platform.logging.formatter_class.new(
+           :layout => ::Logging.layouts.pattern(
              adhearsion_pattern_options.merge(
                :color_scheme => 'bright'
              )
