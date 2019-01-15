@@ -20,7 +20,6 @@ module Adhearsion
 
     before do
       Adhearsion::Rayo::Initializer.client = mock_client
-      Adhearsion.active_calls.clear
     end
 
     describe '#client' do

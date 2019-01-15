@@ -4,10 +4,6 @@ require 'spec_helper'
 
 module Adhearsion
   describe Adhearsion::Process do
-    before :all do
-      Adhearsion.active_calls.clear
-    end
-
     before :each do
       Adhearsion::Process.reset
     end
@@ -56,8 +52,6 @@ module Adhearsion
         end
 
         Adhearsion::Process.final_shutdown
-
-        Adhearsion.active_calls.clear
       end
 
       it "should trigger shutdown handlers synchronously" do

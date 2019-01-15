@@ -36,7 +36,7 @@ module Adhearsion
     end
 
     after do
-      Adhearsion.active_calls.clear
+      Adhearsion.active_calls = nil
     end
 
     def expect_message_waiting_for_response(message = nil, fail = false, &block)

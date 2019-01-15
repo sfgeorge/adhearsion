@@ -80,7 +80,6 @@ module Adhearsion
       let(:call_id) { rand.to_s }
 
       before do
-        Adhearsion.active_calls.clear
         allow(call).to receive_messages(:id => call_id)
       end
 

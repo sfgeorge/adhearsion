@@ -83,7 +83,7 @@ module Adhearsion
     private
 
     def dump_call_counts
-      {dialed: @calls_dialed, offered: @calls_offered, routed: @calls_routed, rejected: @calls_rejected, active: Adhearsion.active_calls.count}
+      {dialed: @calls_dialed, offered: @calls_offered, routed: @calls_routed, rejected: @calls_rejected, active: Adhearsion.active_calls.size}
     end
 
     def dump_calls_by_route
