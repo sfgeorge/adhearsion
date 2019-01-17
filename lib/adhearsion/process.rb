@@ -59,7 +59,7 @@ module Adhearsion
     attr_accessor :important_threads
 
     def initialize
-      @important_threads = ThreadSafeArray.new
+      @important_threads = Concurrent::Array.new
       super
     end
 

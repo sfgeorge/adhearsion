@@ -18,7 +18,7 @@ module Adhearsion
 
     it '#stop_when_zero_calls should wait until the list of active calls reaches 0' do
       skip
-      calls = ThreadSafeArray.new
+      calls = Concurrent::Array.new
       3.times do
         fake_call = Object.new
         expect(fake_call).to receive(:hangup).once
