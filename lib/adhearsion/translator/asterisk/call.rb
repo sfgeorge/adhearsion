@@ -2,6 +2,8 @@
 
 require 'has_guarded_handlers'
 require 'adhearsion/translator/asterisk/ami_error_converter'
+require 'concurrent/atomic/atomic_boolean'
+require 'concurrent/atomic/atomic_reference'
 
 module Adhearsion
   module Translator
@@ -30,12 +32,12 @@ module Adhearsion
           @agi_env = agi_env || {}
           @id = id || Adhearsion.new_uuid
           @components = {}
-          @answered = false
+          @answered = Concurrent::AtomicBoolean.new
           @pending_joins = {}
-          @progress_sent = false
-          @block_commands = false
+          @progress_sent = Concurrent::AtomicBoolean.new
+          @block_commands = Concurrent::AtomicBoolean.new
           @channel_variables = {}
-          @hangup_cause = nil
+          @hangup_cause = Concurrent::AtomicReference.new
         end
 
         def register_component(component)
@@ -94,12 +96,12 @@ module Adhearsion
         end
 
         def answered?
-          @answered
+          @answered.value
         end
 
         def send_progress
-          return if answered? || outbound? || @progress_sent
-          @progress_sent = true
+          return if answered? || outbound? || @progress_sent.true?
+          @progress_sent.value = true
           execute_agi_command "EXEC Progress"
         end
 
@@ -118,15 +120,15 @@ module Adhearsion
           when 'AsyncAGI'
             component_for_command_id_handle ami_event
 
-            if @answered == false && ami_event['SubEvent'] == 'Start'
-              @answered = true
+            if ! @answered.value && ami_event['SubEvent'] == 'Start'
+              @answered.value = true
               send_pb_event Adhearsion::Event::Answered.new(timestamp: ami_event.best_time)
             end
           when 'AsyncAGIStart'
             component_for_command_id_handle ami_event
 
-            if @answered == false
-              @answered = true
+            if ! @answered.value
+              @answered.value = true
               send_pb_event Adhearsion::Event::Answered.new(timestamp: ami_event.best_time)
             end
           when 'AsyncAGIExec', 'AsyncAGIEnd'
@@ -202,7 +204,7 @@ module Adhearsion
         end
 
         def execute_command(command)
-          if @block_commands
+          if @block_commands.true?
             command.response = Adhearsion::ProtocolError.new.setup :item_not_found, "Could not find a call with ID #{id}", id
             return
           end
@@ -223,12 +225,12 @@ module Adhearsion
             end
           when Adhearsion::Rayo::Command::Answer
             execute_agi_command 'ANSWER'
-            @answered = true
+            @answered.value = true
             send_pb_event Adhearsion::Event::Answered.new
             command.response = true
           when Adhearsion::Rayo::Command::Hangup
             send_hangup_command
-            @hangup_cause = :hangup_command
+            @hangup_cause.set :hangup_command
             command.response = true
           when Adhearsion::Rayo::Command::Join
             other_call = translator.call_with_id command.call_uri
@@ -336,10 +338,10 @@ module Adhearsion
         end
 
         def handle_hangup_event(code = nil, timestamp = nil)
+          @block_commands.value = true
           code ||= 16
-          reason = @hangup_cause || HANGUP_CAUSE_TO_END_REASON[code]
-          @block_commands = true
-          @components.each_pair do |id, component|
+          reason = @hangup_cause.get || HANGUP_CAUSE_TO_END_REASON[code]
+          @components.values.each do |component|
             component.call_ended
           end
           send_end_event reason, code, timestamp
