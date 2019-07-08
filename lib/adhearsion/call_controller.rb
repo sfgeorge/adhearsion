@@ -1,6 +1,8 @@
 # encoding: utf-8
 
 require 'countdownlatch'
+require 'concurrent/array'
+require 'concurrent/atomic/atomic_reference'
 
 %w(
   dial
@@ -83,7 +85,8 @@ module Adhearsion
     def initialize(call, metadata = nil, &block)
       @call, @metadata, @block = call, metadata || {}, block
       @block_context = eval "self", @block.binding if @block
-      @active_components = []
+      @active_components = Concurrent::Array.new
+      @pause_latch = Concurrent::AtomicReference.new
     end
 
     def method_missing(method_name, *args, &block)
@@ -131,7 +134,7 @@ module Adhearsion
       raise
     ensure
       after
-      logger.debug "Finished executing controller #{self.class}"
+      logger.debug { "Finished executing controller #{self.class}" }
     end
 
     #
@@ -168,7 +171,7 @@ module Adhearsion
     #
     def stop_all_components
       logger.info "Stopping all controller components"
-      @active_components.each do |component|
+      @active_components.dup.each do |component|
         begin
           component.stop!
         rescue Adhearsion::Rayo::Component::InvalidActionError
@@ -213,11 +216,12 @@ module Adhearsion
       block_until_resumed
       call.write_and_await_response command
       if command.is_a?(Adhearsion::Rayo::Component::ComponentNode)
+        @active_components << command
         command.register_event_handler Adhearsion::Event::Complete do |event|
           @active_components.delete command
+          command.terminate unless call.active?
           throw :pass
         end
-        @active_components << command
       end
     end
 
@@ -316,19 +320,19 @@ module Adhearsion
 
     # @private
     def block_until_resumed
-      instance_variable_defined?(:@pause_latch) && @pause_latch.wait
+      (pause_latch = @pause_latch.get) && pause_latch.wait
     end
 
     # @private
     def pause!
-      @pause_latch = CountDownLatch.new 1
+      @pause_latch.set CountDownLatch.new 1
     end
 
     # @private
     def resume!
-      return unless @pause_latch
-      @pause_latch.countdown!
-      @pause_latch = nil
+      return unless pause_latch = @pause_latch.get
+      @pause_latch.set nil
+      pause_latch.countdown!
     end
 
     # @private

@@ -199,7 +199,7 @@ module Adhearsion
     end
 
     def deliver_message(message)
-      logger.debug "Receiving message: #{message.inspect}"
+      logger.debug { "Receiving message: #{message.inspect}" }
       catching_standard_errors do
         trigger_handler :event, message, broadcast: true, exception_callback: ->(e) { Adhearsion::Events.trigger :exception, [e, logger] }
       end
@@ -256,7 +256,7 @@ module Adhearsion
       on_end do |event|
         logger.info "Call #{from} -> #{to} ended due to #{event.reason}#{" (code #{event.platform_code})" if event.platform_code}"
         @end_time = event.timestamp.to_time
-        @duration = @end_time - @start_time if @start_time
+        @duration = @end_time.to_i - @start_time.to_i if @start_time
         clear_from_active_calls
         @end_reason = event.reason
         @end_code = event.platform_code
@@ -271,7 +271,7 @@ module Adhearsion
       if @duration
         @duration
       elsif @start_time
-        Time.now - @start_time
+        Time.now.to_i - @start_time.to_i
       else
         0.0
       end
@@ -382,7 +382,7 @@ module Adhearsion
     # @return [Hash] where :command is the issued command, :joined_waiter is a #wait responder which is triggered when the join is complete, and :unjoined_waiter is a #wait responder which is triggered when the entities are unjoined
     #
     def join(target, options = {})
-      logger.debug "Joining to #{target}"
+      logger.info "Joining to #{target}"
 
       joined_condition = CountDownLatch.new(1)
       on_joined target do
@@ -501,7 +501,7 @@ module Adhearsion
     def write_command(command)
       abort Hangup.new(@end_reason) unless active? || command.is_a?(Adhearsion::Rayo::Command::Hangup)
       merge_headers command.headers if command.respond_to? :headers
-      logger.debug "Executing command #{command.inspect}"
+      logger.debug { "Executing command #{command.inspect}" }
       unless command.is_a?(Adhearsion::Rayo::Command::Dial)
         command.target_call_id = id
         command.domain = domain
@@ -533,7 +533,7 @@ module Adhearsion
     # @option options [String] subject The message subject.
     #
     def send_message(body, options = {})
-      logger.debug "Sending message: #{body}"
+      logger.debug { "Sending message: #{body}" }
       client.send_message id, domain, body, options
     end
 
@@ -600,7 +600,7 @@ module Adhearsion
 
     def merge_headers(headers)
       headers.each do |name, value|
-        variables[name.to_s.downcase.gsub('-', '_')] = value
+        variables[name.to_s.downcase.tr('-', '_')] = value
       end
     end
 

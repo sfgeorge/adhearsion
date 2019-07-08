@@ -4,10 +4,6 @@ require 'spec_helper'
 
 module Adhearsion
   describe Adhearsion::Process do
-    before :all do
-      Adhearsion.active_calls.clear
-    end
-
     before :each do
       Adhearsion::Process.reset
     end
@@ -22,7 +18,7 @@ module Adhearsion
 
     it '#stop_when_zero_calls should wait until the list of active calls reaches 0' do
       skip
-      calls = ThreadSafeArray.new
+      calls = Concurrent::Array.new
       3.times do
         fake_call = Object.new
         expect(fake_call).to receive(:hangup).once
@@ -56,8 +52,6 @@ module Adhearsion
         end
 
         Adhearsion::Process.final_shutdown
-
-        Adhearsion.active_calls.clear
       end
 
       it "should trigger shutdown handlers synchronously" do

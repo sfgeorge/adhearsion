@@ -16,7 +16,7 @@ module Adhearsion
     end
 
     it 'can add a call to the collection' do
-      expect(subject.any?).to eq(false)
+      expect(subject.values.any?).to eq(false)
       call = Call.new new_offer
       subject << call
       expect(call).to be_a Adhearsion::Call

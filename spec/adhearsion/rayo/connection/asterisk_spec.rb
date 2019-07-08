@@ -23,15 +23,7 @@ describe Adhearsion::Rayo::Connection::Asterisk do
   describe '#ami_client' do
     subject { connection.ami_client }
 
-    it { is_expected.to be_a described_class::RubyAMIStreamProxy }
-  end
-
-  describe '#ami_client' do
-    describe '#stream' do
-      subject { connection.ami_client.stream }
-
-      it { is_expected.to be_a RubyAMI::Stream }
-    end
+    it { is_expected.to respond_to :send_action }
   end
 
   it 'should set the connection on the translator' do
@@ -69,7 +61,7 @@ describe Adhearsion::Rayo::Connection::Asterisk do
     end
 
     it 'shuts down the translator' do
-      expect(subject.translator).to receive(:terminate).once
+      expect(subject.translator.__actor__).to receive(:terminate).once
       subject.stop
     end
   end

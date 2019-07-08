@@ -2,6 +2,9 @@
 
 require 'has_guarded_handlers'
 require 'adhearsion/translator/asterisk/ami_error_converter'
+require 'concurrent/atomic/atomic_boolean'
+require 'concurrent/atomic/atomic_reference'
+require 'concurrent/map'
 
 module Adhearsion
   module Translator
@@ -13,7 +16,7 @@ module Adhearsion
 
         OUTBOUND_CHANNEL_MATCH = /.* <(?<channel>.*)>/.freeze
 
-        attr_reader :id, :channel, :translator, :agi_env, :direction, :pending_joins
+        attr_reader :id, :channel, :translator, :agi_env, :pending_joins
 
         HANGUP_CAUSE_TO_END_REASON = Hash.new { :error }
         HANGUP_CAUSE_TO_END_REASON[0] = :hungup
@@ -29,17 +32,23 @@ module Adhearsion
           @channel, @translator, @ami_client, @connection = channel, translator, ami_client, connection
           @agi_env = agi_env || {}
           @id = id || Adhearsion.new_uuid
-          @components = {}
-          @answered = false
-          @pending_joins = {}
-          @progress_sent = false
-          @block_commands = false
-          @channel_variables = {}
-          @hangup_cause = nil
+          @components = Concurrent::Map.new
+          @answered = Concurrent::AtomicBoolean.new
+          @pending_joins = Concurrent::Map.new
+          @progress_sent = Concurrent::AtomicBoolean.new
+          @block_commands = Concurrent::AtomicBoolean.new
+          @channel_variables = Concurrent::Map.new
+          @hangup_cause = Concurrent::AtomicReference.new
+          @direction = Concurrent::AtomicReference.new
+          @waiters = Concurrent::Map.new
+        end
+
+        def direction
+          @direction.get
         end
 
         def register_component(component)
-          @components[component.id] ||= component
+          @components.put_if_absent(component.id, component)
         end
 
         def deregister_component(id)
@@ -51,7 +60,7 @@ module Adhearsion
         end
 
         def send_offer
-          @direction = :inbound
+          @direction.set :inbound
           send_pb_event offer_event
         end
 
@@ -65,7 +74,7 @@ module Adhearsion
         alias :inspect :to_s
 
         def dial(dial_command)
-          @direction = :outbound
+          @direction.set :outbound
           channel = dial_command.to || ''
           channel.match(OUTBOUND_CHANNEL_MATCH) { |m| channel = m[:channel] }
           params = { :async       => true,
@@ -94,12 +103,12 @@ module Adhearsion
         end
 
         def answered?
-          @answered
+          @answered.value
         end
 
         def send_progress
-          return if answered? || outbound? || @progress_sent
-          @progress_sent = true
+          return if answered? || outbound? || @progress_sent.true?
+          @progress_sent.value = true
           execute_agi_command "EXEC Progress"
         end
 
@@ -118,15 +127,15 @@ module Adhearsion
           when 'AsyncAGI'
             component_for_command_id_handle ami_event
 
-            if @answered == false && ami_event['SubEvent'] == 'Start'
-              @answered = true
+            if ! @answered.value && ami_event['SubEvent'] == 'Start'
+              @answered.value = true
               send_pb_event Adhearsion::Event::Answered.new(timestamp: ami_event.best_time)
             end
           when 'AsyncAGIStart'
             component_for_command_id_handle ami_event
 
-            if @answered == false
-              @answered = true
+            if ! @answered.value
+              @answered.value = true
               send_pb_event Adhearsion::Event::Answered.new(timestamp: ami_event.best_time)
             end
           when 'AsyncAGIExec', 'AsyncAGIEnd'
@@ -202,7 +211,7 @@ module Adhearsion
         end
 
         def execute_command(command)
-          if @block_commands
+          if @block_commands.true?
             command.response = Adhearsion::ProtocolError.new.setup :item_not_found, "Could not find a call with ID #{id}", id
             return
           end
@@ -223,12 +232,12 @@ module Adhearsion
             end
           when Adhearsion::Rayo::Command::Answer
             execute_agi_command 'ANSWER'
-            @answered = true
+            @answered.value = true
             send_pb_event Adhearsion::Event::Answered.new
             command.response = true
           when Adhearsion::Rayo::Command::Hangup
             send_hangup_command
-            @hangup_cause = :hangup_command
+            @hangup_cause.set :hangup_command
             command.response = true
           when Adhearsion::Rayo::Command::Join
             other_call = translator.call_with_id command.call_uri
@@ -273,7 +282,7 @@ module Adhearsion
             component_class = case command.input.recognizer
             when 'unimrcp'
               case command.output.renderer
-              when 'unimrcp'
+              when 'unimrcp', 'native_or_unimrcp'
                 Component::MRCPPrompt
               when 'asterisk'
                 Component::MRCPNativePrompt
@@ -306,11 +315,17 @@ module Adhearsion
         def execute_agi_command(command, *params)
           agi = AGICommand.new Adhearsion.new_uuid, channel, command, *params
           response = Celluloid::Future.new
-          register_tmp_handler :ami, [{name: 'AsyncAGI', [:[], 'SubEvent'] => 'Exec'}, {name: 'AsyncAGIExec'}], [{[:[], 'CommandID'] => agi.id}, {[:[], 'CommandId'] => agi.id}] do |event|
+          handler = register_tmp_handler :ami, [{name: 'AsyncAGI', [:[], 'SubEvent'] => 'Exec'}, {name: 'AsyncAGIExec'}], [{[:[], 'CommandID'] => agi.id}, {[:[], 'CommandId'] => agi.id}] do |event|
+            @waiters.delete(response)
             response.signal Celluloid::SuccessResponse.new(nil, event)
           end
-          agi.execute @ami_client
-          event = response.value
+          @waiters[response] = handler
+          begin
+            agi.execute @ami_client
+            event = response.value
+          ensure
+            @waiters.delete(response)
+          end
           return unless event
           agi.parse_result event
         end
@@ -336,13 +351,19 @@ module Adhearsion
         end
 
         def handle_hangup_event(code = nil, timestamp = nil)
+          @block_commands.value = true
           code ||= 16
-          reason = @hangup_cause || HANGUP_CAUSE_TO_END_REASON[code]
-          @block_commands = true
-          @components.each_pair do |id, component|
+          reason = @hangup_cause.get || HANGUP_CAUSE_TO_END_REASON[code]
+          @components.each_pair do |_, component|
             component.call_ended
           end
           send_end_event reason, code, timestamp
+        ensure
+          @waiters.each do |response, handler|
+            unregister_handler(:ami, handler)
+            # NOTE: maybe this should be an ErrorResponse, fine (for now) with the nil return
+            response.signal Celluloid::SuccessResponse.new(nil, nil) if @waiters.key?(response)
+          end
         end
 
         def after(*args, &block)

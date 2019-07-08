@@ -89,7 +89,8 @@ module Adhearsion
         else
           puts "Please choose a call:"
           puts "# (inbound/outbound) details"
-          current_calls = calls.values
+          now = Time.now
+          current_calls = calls.values.sort { |c1, c2| (c1.start_time || now) <=> (c2.start_time || now) }
           current_calls.each_with_index do |active_call, index|
             puts "#{index}: (#{active_call.is_a?(OutboundCall) ? 'o' : 'i' }) #{active_call.id} from #{active_call.from} to #{active_call.to}"
           end

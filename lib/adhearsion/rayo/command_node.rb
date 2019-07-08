@@ -40,8 +40,14 @@ module Adhearsion
       rescue StateMachine::InvalidTransition => e
         e.message << " for command #{self}"
         raise e
-      rescue FutureResource::ResourceAlreadySetException
+      rescue FutureResource::ResourceAlreadySetException => e
+        logger.error "#{e.class} for: #{self.inspect}"
       end
+
+      def terminate
+        @response.terminate unless @response.set_yet?
+      end
+
     end
   end
 end

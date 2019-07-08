@@ -24,8 +24,8 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'activesupport', [">= 3.0.0", "< 5.0.0"]
   s.add_runtime_dependency 'adhearsion-loquacious', ["~> 1.9"]
   s.add_runtime_dependency 'blather', ["~> 2.0"]
-  s.add_runtime_dependency 'bundler', ["~> 1.0"]
   s.add_runtime_dependency 'celluloid', ["~> 0.16.0"]
+  s.add_runtime_dependency 'concurrent-ruby', ["~> 1.0"]
   s.add_runtime_dependency 'countdownlatch'
   s.add_runtime_dependency 'deep_merge'
   s.add_runtime_dependency 'ffi', ["~> 1.0"]
@@ -42,14 +42,14 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'ruby_jid', ["~> 1.0"]
   s.add_runtime_dependency 'ruby_speech', ["~> 3.0"]
   s.add_runtime_dependency 'state_machine', ["~> 1.0"]
-  s.add_runtime_dependency 'thor', "~> 0.18.0"
+  s.add_runtime_dependency 'thor', "~> 0.18"
   s.add_runtime_dependency 'virtus', ["~> 1.0"]
 
   s.add_development_dependency 'aruba', "~> 0.6.0"
   s.add_development_dependency 'cucumber'
   s.add_development_dependency 'guard-cucumber'
   s.add_development_dependency 'guard-rspec'
-  s.add_development_dependency 'rspec', ["~> 3.0"]
+  s.add_development_dependency 'rspec', ["~> 3.8"]
   s.add_development_dependency 'yard'
   s.add_development_dependency 'guard-yard'
   s.add_development_dependency 'coveralls'

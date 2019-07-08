@@ -80,7 +80,6 @@ module Adhearsion
       let(:call_id) { rand.to_s }
 
       before do
-        Adhearsion.active_calls.clear
         allow(call).to receive_messages(:id => call_id)
       end
 
@@ -112,6 +111,7 @@ module Adhearsion
           end
 
           it "should allow selection of the call to use" do
+            allow(call).to receive_messages :start_time => Time.now - 1
             mock_io = StringIO.new
             Console.input = mock_io
             expect(mock_io).to receive(:gets).once.and_return "1\n"

@@ -151,15 +151,17 @@ module Adhearsion
             end
 
             new_call.on_answer do |event|
-              new_call.on_joined @call do |joined|
-                join_status.started joined.timestamp.to_time
-              end
+              if @call.alive? && @call.active?
+                new_call.on_joined @call do |joined|
+                  join_status.started joined.timestamp.to_time
+                end
 
-              new_call.on_unjoined @call do |unjoined|
-                join_status.ended unjoined.timestamp.to_time
-                unless @splitting
-                  new_call["dial_countdown_#{@id}"] = true
-                  @latch.countdown!
+                new_call.on_unjoined @call do |unjoined|
+                  join_status.ended unjoined.timestamp.to_time
+                  unless @splitting
+                    new_call["dial_countdown_#{@id}"] = true
+                    @latch.countdown!
+                  end
                 end
               end
 
@@ -172,14 +174,16 @@ module Adhearsion
               end
 
               if new_call.active? && status.result != :answer
-                logger.info "#dial joining call #{new_call.id} to #{@call.id}"
                 pre_join_tasks new_call
-                @call.answer
-                new_call.join @join_target, @join_options
-                unless @join_target == @call
-                  @call.join @join_target, @join_options
+                if @call.alive? && @call.active?
+                  logger.info "#dial joining call #{new_call.id} to #{@call.id}"
+                  @call.answer
+                  new_call.join @join_target, @join_options
+                  unless @join_target == @call
+                    @call.join @join_target, @join_options
+                  end
+                  status.answer!
                 end
-                status.answer!
               elsif status.result == :answer
                 join_status.lost_confirmation!
               end
@@ -210,8 +214,10 @@ module Adhearsion
         # Optionally executes call controllers on calls once split, where 'current_dial' is available in controller metadata in order to perform further operations on the Dial, including rejoining and termination.
         # @param [Hash] targets Target call controllers to execute on call legs once split
         # @option options [Adhearsion::CallController] :main The call controller class to execute on the 'main' call leg (the one who initiated the #dial)
+        # @option options [Hash] :main_metadata Metadata to set on the :main controller before executing it
         # @option options [Proc] :main_callback A block to call when the :main controller completes
         # @option options [Adhearsion::CallController] :others The call controller class to execute on the 'other' call legs (the ones created as a result of the #dial)
+        # @option options [Hash] :others_metadata Metadata to set on the :others controller before executing it
         # @option options [Proc] :others_callback A block to call when the :others controller completes on an individual call
         def split(targets = {})
           @splitting = true
@@ -221,16 +227,21 @@ module Adhearsion
             end
           end.compact
           logger.info "Splitting off peer calls #{calls_to_split.map(&:first).join ", "}"
+          controller_metadata = {'current_dial' => self}
+          others_metadata = controller_metadata.clone
+          others_metadata.merge!(targets[:others_metadata]) if targets.key? :others_metadata
           calls_to_split.each do |id, call|
             ignoring_ended_calls do
               logger.debug "Unjoining peer #{call.id} from #{join_target}"
               ignoring_missing_joins { call.unjoin join_target }
               if split_controller = targets[:others]
                 logger.info "Executing controller #{split_controller} on split call #{call.id}"
-                call.execute_controller split_controller.new(call, 'current_dial' => self), targets[:others_callback]
+                call.execute_controller split_controller.new(call, others_metadata), targets[:others_callback]
               end
             end
           end
+          main_metadata = controller_metadata.clone
+          main_metadata.merge!(targets[:main_metadata]) if targets.key? :main_metadata
           ignoring_ended_calls do
             if join_target != @call
               logger.debug "Unjoining main call #{@call.id} from #{join_target}"
@@ -238,7 +249,7 @@ module Adhearsion
             end
             if split_controller = targets[:main]
               logger.info "Executing controller #{split_controller} on main call"
-              @call.execute_controller split_controller.new(@call, 'current_dial' => self), targets[:main_callback]
+              @call.execute_controller split_controller.new(@call, main_metadata), targets[:main_callback]
             end
           end
         end
@@ -477,7 +488,7 @@ module Adhearsion
         # The duration for which the calls were joined. Does not include time spent in confirmation controllers or after being separated.
         def duration
           if start_time && end_time
-            end_time - start_time
+            end_time.to_i - start_time.to_i
           else
             0.0
           end

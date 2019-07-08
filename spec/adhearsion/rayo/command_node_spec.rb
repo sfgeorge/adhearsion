@@ -97,5 +97,11 @@ describe Adhearsion::Rayo::CommandNode do
       subject.response = :foo
       expect { subject.response = :bar }.not_to raise_error
     end
+
+    it "should not raise when being double set" do
+      response = subject.instance_variable_get(:@response)
+      expect(subject).to receive(:execute!) { response.resource = :bar }
+      expect { subject.response = :foo }.not_to raise_error
+    end
   end
 end

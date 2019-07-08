@@ -59,7 +59,7 @@ module Adhearsion
     attr_accessor :important_threads
 
     def initialize
-      @important_threads = ThreadSafeArray.new
+      @important_threads = Concurrent::Array.new
       super
     end
 
@@ -94,8 +94,8 @@ module Adhearsion
 
     def stop_when_zero_calls
       i = 0
-      until Adhearsion.active_calls.count == 0
-        logger.info "Stop requested but we still have #{Adhearsion.active_calls.count} active calls." if (i % 50) == 0
+      until Adhearsion.active_calls.size == 0
+        logger.info "Stop requested but we still have #{Adhearsion.active_calls.size} active calls." if (i % 50) == 0
         sleep 0.2
         i += 1
       end

@@ -168,6 +168,31 @@ describe Adhearsion::Rayo::Component::Output do
       end
     end
 
+    context 'with a url reference' do
+      let(:uri){ URI('http://example.com/hello.ssml') }
+      subject do
+        Adhearsion::Rayo::Component::Output.new render_document: { url: uri }
+      end
+
+      describe '#render_documents' do
+        subject { super().render_documents }
+        it { is_expected.to eq([described_class::Document.new(url: uri)]) }
+      end
+    end
+
+    context 'with multiple url references' do
+      let(:uri){ URI('http://example.com/hello.ssml') }
+      subject do
+        Adhearsion::Rayo::Component::Output.new( render_document: {value: ssml_doc},
+                                                 render_documents: [{url: uri}, {url: uri}] )
+      end
+
+      describe '#render_documents' do
+        subject { super().render_documents }
+        it { is_expected.to eq([described_class::Document.new(url: uri), described_class::Document.new(url: uri)]) }
+      end
+    end
+
     context "with a nil document" do
       it "removes all documents" do
         subject.render_document = nil
