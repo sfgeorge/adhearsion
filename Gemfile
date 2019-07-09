@@ -4,7 +4,7 @@ gemspec
 
 gem 'sinatra', require: nil
 
-gem 'celluloid', git: 'git@github.com:cloudvox/celluloid.git', ref: 'dialogtech/support/v0.16.1'
+gem 'celluloid', git: 'https://github.com/cloudvox/celluloid.git', ref: 'dialogtech/support/v0.16.1'
 
 group :test do
   # TODO: some expectations started failing in 3.8.3
