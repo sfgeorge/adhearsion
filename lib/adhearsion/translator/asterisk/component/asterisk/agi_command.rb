@@ -11,6 +11,7 @@ module Adhearsion
             end
 
             def execute
+              register_ref
               @agi.execute ami_client
               send_ref
             rescue RubyAMI::Error
