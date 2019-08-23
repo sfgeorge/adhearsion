@@ -8,3 +8,4 @@ module Adhearsion
 end
 
 require 'adhearsion/event/asterisk/ami'
+require 'adhearsion/event/asterisk/ami/decoder'

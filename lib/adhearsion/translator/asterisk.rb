@@ -194,6 +194,8 @@ module Adhearsion
       def handle_varset_ami_event(event)
         return unless event.name == 'VarSet'
 
+        Adhearsion::Event::Asterisk::AMI::Decoder.decode_varset_value! event['Value']
+
         return unless event['Variable'] == 'adhearsion_call_id' && (call = call_with_id event['Value'])
         @channel_to_call_id.delete call.channel
         call.channel = event['Channel']
