@@ -41,7 +41,7 @@ module Adhearsion
         @event_filter ? !!@event_filter[event] : true
       end
 
-      event_filter = nil
+      self.event_filter = nil
 
       def initialize(ami_client, connection)
         @ami_client, @connection = ami_client, connection
@@ -192,8 +192,11 @@ module Adhearsion
       end
 
       def handle_varset_ami_event(event)
-        return unless event.name == 'VarSet' && event['Variable'] == 'adhearsion_call_id' && (call = call_with_id event['Value'])
+        return unless event.name == 'VarSet'
 
+        Adhearsion::Event::Asterisk::AMI::Decoder.decode_varset_value! event['Value']
+
+        return unless event['Variable'] == 'adhearsion_call_id' && (call = call_with_id event['Value'])
         @channel_to_call_id.delete call.channel
         call.channel = event['Channel']
         register_call call
