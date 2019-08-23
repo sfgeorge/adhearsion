@@ -192,8 +192,9 @@ module Adhearsion
       end
 
       def handle_varset_ami_event(event)
-        return unless event.name == 'VarSet' && event['Variable'] == 'adhearsion_call_id' && (call = call_with_id event['Value'])
+        return unless event.name == 'VarSet'
 
+        return unless event['Variable'] == 'adhearsion_call_id' && (call = call_with_id event['Value'])
         @channel_to_call_id.delete call.channel
         call.channel = event['Channel']
         register_call call
